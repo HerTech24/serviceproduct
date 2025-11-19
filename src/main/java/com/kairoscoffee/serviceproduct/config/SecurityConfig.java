@@ -1,68 +1,58 @@
+// ============================================
+// 1. SecurityConfig.java
+// ============================================
 package com.kairoscoffee.serviceproduct.config;
 
+import com.kairoscoffee.serviceproduct.security.JwtAuthenticationFilter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-@EnableMethodSecurity // Habilita @PreAuthorize
+@RequiredArgsConstructor
 public class SecurityConfig {
 
+    private final JwtAuthenticationFilter jwtFilter;
+
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(Customizer.withDefaults())
+                .sessionManagement(sm ->
+                        sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
                 .authorizeHttpRequests(auth -> auth
 
-                        // =============================
-                        //       ENDPOINTS PUBLICOS
-                        // =============================
-                        .requestMatchers(
-                                "/api/productos",
-                                "/api/productos/",
-                                "/api/productos/*",
-                                "/api/productos/ofertas/**",
-                                "/api/productos/categoria/**",
-                                "/api/productos/proveedor/**"
-                        ).permitAll()
+                        // 📌 Rutas públicas
+                        .requestMatchers("/product/public/**").permitAll()
 
-                        .requestMatchers(
-                                "/api/categorias",
-                                "/api/categorias/**"
-                        ).permitAll()
+                        // 📌 Actuator
+                        .requestMatchers("/actuator/**").permitAll()
 
-                        .requestMatchers(
-                                "/api/proveedores",
-                                "/api/proveedores/**"
-                        ).permitAll()
-
-                        // =============================
-                        //        SWAGGER PUBLICO
-                        // =============================
+                        // 📌 Swagger
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
                         ).permitAll()
 
-                        // ACTUATOR health público
-                        .requestMatchers("/actuator/health").permitAll()
+                        // 📌 Rutas USER/ADMIN
+                        .requestMatchers("/product/user/**")
+                        .hasAnyAuthority("CUSTOMER", "ADMIN")
 
-                        // ========================================
-                        //   TODO LO DEMÁS → REQUIERE AUTENTICACIÓN
-                        // ========================================
+                        // 📌 Rutas solo ADMIN (CRUD)
+                        .requestMatchers("/product/admin/**")
+                        .hasAuthority("ADMIN")
+
+                        // 📌 El resto requiere autenticación
                         .anyRequest().authenticated()
                 )
-
-                // Resource Server para JWT (Auth0)
-                .oauth2ResourceServer(oauth ->
-                        oauth.jwt(Customizer.withDefaults())
-                );
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

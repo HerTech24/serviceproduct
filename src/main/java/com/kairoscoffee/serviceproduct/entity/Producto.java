@@ -5,9 +5,11 @@ import lombok.*;
 
 @Entity
 @Table(name = "PRODUCTO")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Producto {
 
     @Id
@@ -15,26 +17,24 @@ public class Producto {
     @Column(name = "ID_PRODUCTO")
     private Long id;
 
-    @Column(name = "NOMBRE", nullable = false)
+    @Column(name = "NOMBRE", nullable = false, length = 100)
     private String nombre;
 
-    @Column(name = "DESCRIPCION")
+    @Column(name = "DESCRIPCION", length = 255)
     private String descripcion;
 
-    @Column(name = "PRECIO")
+    @Column(name = "PRECIO", nullable = false)
     private Double precio;
 
     @Column(name = "STOCK")
     private Integer stock;
 
-    @ManyToOne
-    @JoinColumn(name = "ID_CATEGORIA")
-    private Categoria categoria;
+    @Column(name = "ID_CATEGORIA", nullable = false)
+    private Long categoriaId;
 
-    @ManyToOne
-    @JoinColumn(name = "ID_PROVEEDOR")
-    private Proveedor proveedor;
+    @Column(name = "ID_PROVEEDOR")
+    private Long proveedorId;
 
-    @OneToOne(mappedBy = "producto")
-    private Oferta oferta;
+    @Column(name = "URL_IMAGEN", length = 255)
+    private String urlImagen;
 }

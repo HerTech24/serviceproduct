@@ -1,139 +1,120 @@
 package com.kairoscoffee.serviceproduct.service.impl;
 
 import com.kairoscoffee.serviceproduct.dto.ProductoDTO;
-import com.kairoscoffee.serviceproduct.entity.Categoria;
-import com.kairoscoffee.serviceproduct.entity.Oferta;
 import com.kairoscoffee.serviceproduct.entity.Producto;
-import com.kairoscoffee.serviceproduct.entity.Proveedor;
 import com.kairoscoffee.serviceproduct.mapper.ProductoMapper;
-import com.kairoscoffee.serviceproduct.repository.CategoriaRepository;
-import com.kairoscoffee.serviceproduct.repository.OfertaRepository;
 import com.kairoscoffee.serviceproduct.repository.ProductoRepository;
-import com.kairoscoffee.serviceproduct.repository.ProveedorRepository;
 import com.kairoscoffee.serviceproduct.service.ProductoService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class ProductoServiceImpl implements ProductoService {
 
-    private final ProductoRepository productoRepository;
-    private final CategoriaRepository categoriaRepository;
-    private final ProveedorRepository proveedorRepository;
-    private final OfertaRepository ofertaRepository;
-
-    public ProductoServiceImpl(
-            ProductoRepository productoRepository,
-            CategoriaRepository categoriaRepository,
-            ProveedorRepository proveedorRepository,
-            OfertaRepository ofertaRepository
-    ) {
-        this.productoRepository = productoRepository;
-        this.categoriaRepository = categoriaRepository;
-        this.proveedorRepository = proveedorRepository;
-        this.ofertaRepository = ofertaRepository;
-    }
+    private final ProductoRepository repository;
+    private final ProductoMapper mapper;
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProductoDTO> findAll() {
-        return productoRepository.findAll()
+        return repository.findAll()
                 .stream()
-                .map(ProductoMapper::toDTO)
+                .map(mapper::toDTO)
                 .toList();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ProductoDTO findById(Long id) {
-        return productoRepository.findById(id)
-                .map(ProductoMapper::toDTO)
+        return repository.findById(id)
+                .map(mapper::toDTO)
                 .orElse(null);
     }
 
     @Override
+    @Transactional
     public ProductoDTO save(ProductoDTO dto) {
-        Producto producto = mapDTOtoEntity(dto);
-        Producto saved = productoRepository.save(producto);
-        return ProductoMapper.toDTO(saved);
+        Producto entity = mapper.toEntity(dto);
+        Producto saved = repository.save(entity);
+        return mapper.toDTO(saved);
     }
 
     @Override
+    @Transactional
     public ProductoDTO update(Long id, ProductoDTO dto) {
-        return productoRepository.findById(id)
-                .map(p -> {
-                    p.setNombre(dto.getNombre());
-                    p.setDescripcion(dto.getDescripcion());
-                    p.setPrecio(dto.getPrecio());
-                    p.setStock(dto.getStock());
+        return repository.findById(id)
+                .map(producto -> {
+                    producto.setNombre(dto.getNombre());
+                    producto.setDescripcion(dto.getDescripcion());
+                    producto.setPrecio(dto.getPrecio());
+                    producto.setStock(dto.getStock());
+                    producto.setCategoriaId(dto.getCategoriaId());
+                    producto.setProveedorId(dto.getProveedorId());
+                    producto.setUrlImagen(dto.getUrlImagen());
 
-                    if (dto.getCategoriaId() != null) {
-                        Categoria cat = categoriaRepository.findById(dto.getCategoriaId()).orElse(null);
-                        p.setCategoria(cat);
-                    }
-
-                    if (dto.getProveedorId() != null) {
-                        Proveedor prov = proveedorRepository.findById(dto.getProveedorId()).orElse(null);
-                        p.setProveedor(prov);
-                    }
-
-                    if (dto.getOfertaId() != null) {
-                        Oferta of = ofertaRepository.findById(dto.getOfertaId()).orElse(null);
-                        p.setOferta(of);
-                    }
-
-                    return ProductoMapper.toDTO(productoRepository.save(p));
+                    Producto updated = repository.save(producto);
+                    return mapper.toDTO(updated);
                 })
                 .orElse(null);
     }
 
     @Override
+    @Transactional
     public void delete(Long id) {
-        productoRepository.deleteById(id);
+        repository.deleteById(id);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProductoDTO> findByCategoria(Long categoriaId) {
-        return productoRepository.findByCategoriaId(categoriaId)
+        return repository.findByCategoriaId(categoriaId)
                 .stream()
-                .map(ProductoMapper::toDTO)
+                .map(mapper::toDTO)
                 .toList();
     }
 
     @Override
-    public List<ProductoDTO> findWithActiveOffers() {
-        return productoRepository.findByOferta_ActivaTrue()
-                .stream()
-                .map(ProductoMapper::toDTO)
-                .toList();
-    }
-
-    @Override
+    @Transactional(readOnly = true)
     public List<ProductoDTO> findByProveedor(Long proveedorId) {
-        return productoRepository.findByProveedorId(proveedorId)
+        return repository.findByProveedorId(proveedorId)
                 .stream()
-                .map(ProductoMapper::toDTO)
+                .map(mapper::toDTO)
                 .toList();
     }
 
-    private Producto mapDTOtoEntity(ProductoDTO dto) {
-        Producto p = new Producto();
-        p.setNombre(dto.getNombre());
-        p.setDescripcion(dto.getDescripcion());
-        p.setPrecio(dto.getPrecio());
-        p.setStock(dto.getStock());
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductoDTO> findByNombre(String nombre) {
+        return repository.findByNombreContainingIgnoreCase(nombre)
+                .stream()
+                .map(mapper::toDTO)
+                .toList();
+    }
 
-        if (dto.getCategoriaId() != null) {
-            p.setCategoria(categoriaRepository.findById(dto.getCategoriaId()).orElse(null));
-        }
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductoDTO> findProductosConStock() {
+        return repository.findProductosConStock()
+                .stream()
+                .map(mapper::toDTO)
+                .toList();
+    }
 
-        if (dto.getProveedorId() != null) {
-            p.setProveedor(proveedorRepository.findById(dto.getProveedorId()).orElse(null));
-        }
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductoDTO> findProductosConOfertasActivas() {
+        List<Producto> productosConOfertas = repository.findProductosConOfertasActivas();
 
-        if (dto.getOfertaId() != null) {
-            p.setOferta(ofertaRepository.findById(dto.getOfertaId()).orElse(null));
-        }
-
-        return p;
+        return productosConOfertas.stream()
+                .map(producto -> {
+                    ProductoDTO dto = mapper.toDTO(producto);
+                    dto.setOfertaActiva(true);
+                    return dto;
+                })
+                .toList();
     }
 }

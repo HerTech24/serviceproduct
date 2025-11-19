@@ -11,8 +11,9 @@ public interface ProductoService {
     ProductoDTO update(Long id, ProductoDTO dto);
     void delete(Long id);
 
-    // Filtros para React
     List<ProductoDTO> findByCategoria(Long categoriaId);
-    List<ProductoDTO> findWithActiveOffers();
     List<ProductoDTO> findByProveedor(Long proveedorId);
+    List<ProductoDTO> findByNombre(String nombre);
+    List<ProductoDTO> findProductosConStock();
+    List<ProductoDTO> findProductosConOfertasActivas();
 }

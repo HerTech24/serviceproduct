@@ -1,9 +1,11 @@
 package com.kairoscoffee.serviceproduct.dto;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class ProductoDTO {
 
@@ -12,14 +14,8 @@ public class ProductoDTO {
     private String descripcion;
     private Double precio;
     private Integer stock;
-
     private Long categoriaId;
-    private String categoriaNombre;
-
     private Long proveedorId;
-    private String proveedorNombre;
-
-    private Long ofertaId;
-    private Double ofertaDescuento;
+    private String urlImagen;
     private Boolean ofertaActiva;
 }
